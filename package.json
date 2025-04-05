@@ -1,6 +1,6 @@
 {
   "name": "@indiefellas/astro-adapter-nekoweb",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "description": "Addon adapter for Astro apps that automatically deploys your app to Nekoweb.",
   "keywords": [
     "astro-adapter",
