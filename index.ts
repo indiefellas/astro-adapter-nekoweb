@@ -268,6 +268,11 @@ export default function createIntegration(args: Options): AstroIntegration {
                     rssContent = fs.readFileSync(rssFile, 'utf-8') + `\n`;
                 }
 
+                if (fs.existsSync(path.join(outDir, '404.html'))) {
+                    logger.info('Found 404.html, renaming it to not_found.html...')
+                    fs.renameSync(path.join(outDir, '404.html'), path.join(outDir, 'not_found.html'))
+                }
+
                 fs.cpSync(outDir, tmpBuildDir + `/${folder}`, { recursive: true });
                 await zipDirectory(tmpBuildDir, zipFileName);
                 logger.info(`Compressed "${outDir}"`);
