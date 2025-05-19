@@ -118,7 +118,7 @@ class NekoAPI extends NekowebAPI {
         const ures = await this.getSiteInfo()
         const username = ures.username;
     
-        const response = await this.generic('/csrf', {
+        const response = await this.ucfg?.generic('/csrf', {
             method: 'GET',
         }) as ArrayBuffer;
     
