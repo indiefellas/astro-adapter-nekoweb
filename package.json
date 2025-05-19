@@ -1,6 +1,6 @@
 {
   "name": "@indiefellas/astro-adapter-nekoweb",
-  "version": "2.0.0",
+  "version": "2.0.2",
   "description": "Deploy your site to Nekoweb",
   "keywords": [
     "astro-adapter",
@@ -28,6 +28,12 @@
     "@indiefellas/nekoweb-api": "^1.1.0",
     "archiver": "^7.0.1"
   },
+  "scripts": {
+    "prepare": "bun tsc"
+  },
+  "files": [
+    "dist/**/*"
+  ],
   "exports": {
     ".": {
       "import": "./dist/index.js"
