@@ -171,7 +171,7 @@ class BigFileExt extends BigFile {
             }
 
             await api.editFileCSRF(
-                '/.astro-adapter.nekoweb.html',
+                '/.astro-adapter-nekoweb.html',
                 `<!--
     This is an auto-generated file created by astro-adapter-nekoweb.
 
