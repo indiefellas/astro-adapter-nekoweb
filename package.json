@@ -1,35 +1,36 @@
 {
   "name": "@indiefellas/astro-adapter-nekoweb",
-  "version": "1.1.0",
-  "description": "Addon adapter for Astro apps that automatically deploys your app to Nekoweb.",
+  "version": "2.0.0",
+  "description": "Deploy your site to Nekoweb",
   "keywords": [
     "astro-adapter",
     "deploy",
-    "nekoweb"
+    "nekoweb",
+    "withastro"
   ],
   "repository": {
     "type": "git",
     "url": "https://github.com/indiefellas/astro-adapter-nekoweb"
   },
+  "homepage": "https://github.com/indiefellas/astro-adapter-nekoweb",
   "license": "MIT",
-  "module": "index.ts",
+  "module": "dist/index.js",
   "type": "module",
   "devDependencies": {
     "@types/archiver": "^6.0.3",
     "@types/bun": "latest",
-    "astro": "^5.6.0"
+    "astro": "^5.6.1"
   },
   "peerDependencies": {
-    "typescript": "^5"
+    "typescript": "^5.8.2"
   },
   "dependencies": {
-    "archiver": "^7.0.1",
-    "form-data": "^4.0.2",
-    "node-fetch": "^3.3.2"
+    "@indiefellas/nekoweb-api": "^1.1.0",
+    "archiver": "^7.0.1"
   },
   "exports": {
     ".": {
-      "import": "./index.ts"
+      "import": "./dist/index.js"
     },
     "./package.json": "./package.json"
   }

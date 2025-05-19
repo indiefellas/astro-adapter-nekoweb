@@ -19,13 +19,13 @@ then add it on your `astro.config.mjs`:
 
 // https://astro.build/config
 export default defineConfig({
-  vite: {
-    plugins: [tailwindcss()]
-  },
   adapter: nekoweb({
     apiKey: 'api key (required)',
     cookie: 'your nekoweb cookie for recently updated support (optional)',
-    folder: 'dist'
+    folder: 'dist',
+    logging: (type, str) => {
+      // this is optional, but recommended
+    }
   })
 });
 ```
