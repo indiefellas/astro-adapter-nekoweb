@@ -172,8 +172,19 @@ class BigFileExt extends BigFile {
 
             await api.editFileCSRF(
                 '/.astro-adapter.nekoweb.html',
-                `<!-- deployed to Nekoweb using @indiefellas/astro-adapter-nekoweb on ${new Date(Date.now()).toString()} -->`
-            );
+                `<!--
+    This is an auto-generated file created by astro-adapter-nekoweb.
+
+    This file is used to put you on the 'Last Updated' page
+    on Nekoweb.
+
+    You can delete this file if you want, but it will come
+    back the next time you deploy using astro-adapter-nekoweb.
+                
+    https://deploy.nekoweb.org/astro
+
+    ${Date.now()}
+-->`);
 
             logger.info('Sent cookie request');
         } catch (error) {
