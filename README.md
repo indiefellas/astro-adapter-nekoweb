@@ -22,10 +22,7 @@ export default defineConfig({
   adapter: nekoweb({
     apiKey: 'api key (required)',
     cookie: 'your nekoweb cookie for recently updated support (optional)',
-    folder: 'dist',
-    logging: (type, str) => {
-      // this is optional, but recommended
-    }
+    folder: 'dist'
   })
 });
 ```
