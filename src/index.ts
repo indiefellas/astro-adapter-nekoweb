@@ -37,7 +37,7 @@ export interface Options {
     cookie?: string;
 }
 
-let version = '2.0.3';
+let version = '2.2.0';
 
 class NekoAPI extends NekowebAPI {
     private csrf: string = "";
@@ -167,7 +167,7 @@ class BigFileExt extends BigFile {
             await api.getCSRFToken();
             
             if (rssFile && rssContent) {
-                const resp = await api.editFileCSRF(rssFile, rssContent)
+                const resp = await api.editFileCSRF(rssFile, rssContent);
             }
 
             await api.editFileCSRF(
@@ -182,6 +182,7 @@ class BigFileExt extends BigFile {
     back the next time you deploy using astro-adapter-nekoweb.
                 
     https://deploy.nekoweb.org/astro
+    https://github.com/indiefellas/astro-adapter-nekoweb
 
     ${Date.now()}
 -->`);
@@ -271,10 +272,11 @@ export default function createIntegration(args: Options): AstroIntegration {
                     fs.rmSync(tmpBuildDir, { recursive: true, force: true });
                 fs.mkdirSync(tmpBuildDir);
                 const zipFileName = `${folder}.zip`;
-                const rssFile = getRssFile(outDir);
+                let rssFile = getRssFile(outDir);
                 let rssContent;
                 if (rssFile) {
-                    rssContent = fs.readFileSync(rssFile, 'utf-8') + `\n`;
+                    rssContent = fs.readFileSync(rssFile, 'utf-8') + `\n<!-- deployed to Nekoweb using astro-adapter-nekoweb on ${Date.now()} -->`;
+                    rssFile = '/' + args.folder
                 }
 
                 if (fs.existsSync(path.join(outDir, '404.html'))) {
