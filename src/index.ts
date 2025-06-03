@@ -37,7 +37,7 @@ export interface Options {
     cookie?: string;
 }
 
-let version = '2.2.0';
+let version = '2.2.1';
 
 class NekoAPI extends NekowebAPI {
     private csrf: string = "";
@@ -276,7 +276,8 @@ export default function createIntegration(args: Options): AstroIntegration {
                 let rssContent;
                 if (rssFile) {
                     rssContent = fs.readFileSync(rssFile, 'utf-8') + `\n<!-- deployed to Nekoweb using astro-adapter-nekoweb on ${Date.now()} -->`;
-                    rssFile = '/' + args.folder
+                    let r = rssFile.split('/');
+                    rssFile = '/' + args.folder + '/' + r[r.length - 1];
                 }
 
                 if (fs.existsSync(path.join(outDir, '404.html'))) {
