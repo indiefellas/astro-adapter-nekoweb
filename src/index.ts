@@ -5,7 +5,7 @@ import path, { join } from 'node:path';
 import FormData from 'form-data'; 
 import { fileURLToPath } from 'node:url';
 
-const version = '3.0.0';
+const version = '3.4.0';
 
 import type {
 	AstroConfig,
@@ -164,7 +164,7 @@ class NekoAPI extends NekowebAPI {
 class BigFileExt extends BigFile {
     async finalizeUpload(api: NekoAPI, logger: AstroIntegrationLogger, siteName: string, rssFeed?: string, rssContent?: string) {
         try {
-            let res = this.import()
+            let res = await this.import();
 
             if (!api.ucfg) {
                 logger.warn('Nekoweb Cookie not found. Skipping Recently Updated support...');
@@ -251,11 +251,15 @@ export default function createIntegration(args: Options): AstroIntegration {
                     throw new Error('Missing folder');
                 }
 
+                try {
+                    await neko.delete(folder);
+                } catch (e) { }
+
                 const tmpBuildDir = '.build-temp';
                 if (fs.existsSync(tmpBuildDir))
                     fs.rmSync(tmpBuildDir, { recursive: true, force: true });
                 fs.mkdirSync(tmpBuildDir);
-                const zipFileName = `${folder.split('/')[0]}.zip`;
+                const zipFileName = `build.zip`;
                 let rssContent;
                 if (rssFeed) {
                     rssContent = fs.readFileSync(join(outDir, rssFeed), 'utf-8') + `\n<!-- deployed to Nekoweb using astro-adapter-nekoweb on ${Date.now()} -->`;
@@ -276,10 +280,6 @@ export default function createIntegration(args: Options): AstroIntegration {
                 let zip = fs.readFileSync(zipFileName);
                 await bigId.append(zip);
                 logger.info(`Uploaded "${outDir}"`);
-
-                try {
-                    await neko.delete(folder);
-                } catch (e) { }
 
                 await bigId.finalizeUpload(neko, logger, siteName ?? '', rssFeed ? join(`/${folder}`, rssFeed): undefined, rssContent);
                 logger.info(`Successfully deployed "${outDir}"`);
