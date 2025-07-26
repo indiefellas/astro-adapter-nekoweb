@@ -22,7 +22,9 @@ export default defineConfig({
   adapter: nekoweb({
     apiKey: 'api key (required)',
     cookie: 'your nekoweb cookie for recently updated support (optional)',
-    folder: 'dist'
+    siteName: 'your-site (only used if cookie is defined)',
+    domain: 'your-site.nekoweb.org',
+    rssFeed: '/your/rss/feed/path.xml (optional)'
   })
 });
 ```

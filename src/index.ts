@@ -1,10 +1,11 @@
 import fs, { existsSync, stat } from 'node:fs';
 import fsp, { statfs } from 'node:fs/promises';
 import archiver from 'archiver';
-import fetch from 'node-fetch';
-import path from 'node:path';
+import path, { join } from 'node:path';
 import FormData from 'form-data'; 
 import { fileURLToPath } from 'node:url';
+
+const version = '3.0.0';
 
 import type {
 	AstroConfig,
@@ -22,22 +23,28 @@ export interface Options {
      * You can get one by going to https://nekoweb.org/api
      * @description **Warning**: Putting your API key into your code is not recommended.
      */
-    apiKey?: string;
+    apiKey: string;
     /**
-     * Your Nekoweb serve folder. Defaults to "build".
-     * It must be the same as 'Serve folder' on https://nekoweb.org/settings
-     * We recommend serving your site in a folder instead of on the root path as it can break stuff.
+     * Your Nekoweb domain. Defaults to your main domain.
+     * If you are using a custom domain, use that instead.
      */
-    folder?: string;
+    domain?: string;
     /**
      * Your Nekoweb account cookie. This is required if you want your update count to go up.
      * You can get one by following the instructions on https://deploy.nekoweb.org/#getting-your-cookie
      * @description **Warning**: Putting your account cookie into your code is not recommended.
      */
     cookie?: string;
+    /**
+     * Your Nekoweb site name. This is different than your domain.
+     * Only used when cookie is defined.
+     */
+    siteName?: string;
+    /**
+     * Your RSS feed path relative to the output directory, if you want to update your RSS feed.
+     */
+    rssFeed?: string;
 }
-
-let version = '2.2.2';
 
 class NekoAPI extends NekowebAPI {
     private csrf: string = "";
@@ -48,7 +55,7 @@ class NekoAPI extends NekowebAPI {
         if (cookie) {
             super({
                 apiKey: apiKey,
-                appName: 'astro-adapter-nekoweb/${version} (https://github.com/indiefellas/astro-adapter-nekoweb)',
+                appName: `astro-adapter-nekoweb/${version} (https://github.com/indiefellas/astro-adapter-nekoweb)`,
                 logging: (type, msg) => {
                     switch (type) {
                         case LogType.Info: 
@@ -65,7 +72,7 @@ class NekoAPI extends NekowebAPI {
             });
             this.ucfg = new NekowebAPI({
                 apiKey: '',
-                appName: 'astro-adapter-nekoweb/${version} (https://github.com/indiefellas/astro-adapter-nekoweb)',
+                appName: `astro-adapter-nekoweb/${version} (https://github.com/indiefellas/astro-adapter-nekoweb)`,
                 request: {
                     headers: {
                         Authorization: '',
@@ -116,21 +123,21 @@ class NekoAPI extends NekowebAPI {
     
     async getCSRFToken() {
         const ures = await this.getSiteInfo()
-        const username = ures.username;
+        const domain = ures.domain;
     
         const response = await this.ucfg?.generic('/csrf', {
             method: 'GET',
         }) as ArrayBuffer;
     
         this.csrf = Buffer.from(response).toString();
-        this.site = username;
+        this.site = domain;
     }
     
-    async editFileCSRF(path: string, content: string) {
+    async editFileCSRF(path: string, content: string, siteName: string) {
 		let data = new FormData() as any;
 		data.append("pathname", path);
 		data.append("content", content);
-        data.append("site", this.site);
+        data.append("site", siteName);
         data.append("csrf", this.csrf);
 
 		return this.ucfg?.generic('/files/edit', {
@@ -155,7 +162,7 @@ class NekoAPI extends NekowebAPI {
 }
 
 class BigFileExt extends BigFile {
-    async finalizeUpload(api: NekoAPI, logger: AstroIntegrationLogger, rssFile?: string, rssContent?: string) {
+    async finalizeUpload(api: NekoAPI, logger: AstroIntegrationLogger, siteName: string, rssFeed?: string, rssContent?: string) {
         try {
             let res = this.import()
 
@@ -166,8 +173,8 @@ class BigFileExt extends BigFile {
 
             await api.getCSRFToken();
             
-            if (rssFile && rssContent) {
-                const resp = await api.editFileCSRF(rssFile, rssContent);
+            if (rssFeed && rssContent) {
+                const resp = await api.editFileCSRF(rssFeed, rssContent, siteName);
             }
 
             await api.editFileCSRF(
@@ -185,12 +192,11 @@ class BigFileExt extends BigFile {
     https://github.com/indiefellas/astro-adapter-nekoweb
 
     ${Date.now()}
--->`);
+-->`, siteName);
 
             logger.info('Sent cookie request');
         } catch (error) {
             logger.error(`Failed to upload. ${error}`);
-            throw error;
         }
     }
 }
@@ -201,31 +207,6 @@ async function zipDirectory(source: string, out: string) {
     archive.pipe(output);
     archive.directory(source, false);
     return archive.finalize();
-}
-
-function getRssFile(dir: string): string | undefined {
-    try {
-        const files = fs.readdirSync(dir);
-
-        for (const fileIndex in files) {
-            const file = files[fileIndex];
-            const filePath = path.join(dir, file || '');
-            const stat = fs.lstatSync(filePath);
-            if (stat.isDirectory()) {
-                const res = getRssFile(filePath);
-                if (res) {
-                    return res;
-                }
-            } else if (file?.endsWith('.xml')) {
-                return filePath;
-            }
-        }
-
-        return undefined;
-    } catch (e) {
-        console.error(e);
-        return undefined;
-    }
 }
 
 export default function createIntegration(args: Options): AstroIntegration {
@@ -258,26 +239,26 @@ export default function createIntegration(args: Options): AstroIntegration {
                 if (!args.apiKey || args.apiKey === '') {
                     logger.error('Missing API key. You need to define it so you can deploy your site.');
                     throw new Error('Missing API key');
-                } else if (!args.folder || args.folder === '') {
-                    logger.error('Missing serve folder.');
-                    throw new Error('Missing serve directory');
                 }
 
-                const { apiKey, cookie, folder = 'build' } = args;
-                const outDir = fileURLToPath(dir)
-                const neko = new NekoAPI(apiKey, logger, cookie)
+                const { domain, apiKey, cookie, rssFeed, siteName } = args;
+                const outDir = fileURLToPath(dir);
+                const neko = new NekoAPI(apiKey, logger, cookie);
+                const site = await neko.getSiteInfo(domain);
+                const folder = site.folder;
+                if (!folder) {
+                    logger.error('Missing folder.');
+                    throw new Error('Missing folder');
+                }
 
                 const tmpBuildDir = '.build-temp';
                 if (fs.existsSync(tmpBuildDir))
                     fs.rmSync(tmpBuildDir, { recursive: true, force: true });
                 fs.mkdirSync(tmpBuildDir);
                 const zipFileName = `${folder.split('/')[0]}.zip`;
-                let rssFile = getRssFile(outDir);
                 let rssContent;
-                if (rssFile) {
-                    rssContent = fs.readFileSync(rssFile, 'utf-8') + `\n<!-- deployed to Nekoweb using astro-adapter-nekoweb on ${Date.now()} -->`;
-                    let r = rssFile.split('/');
-                    rssFile = '/' + args.folder + '/' + r[r.length - 1];
+                if (rssFeed) {
+                    rssContent = fs.readFileSync(join(outDir, rssFeed), 'utf-8') + `\n<!-- deployed to Nekoweb using astro-adapter-nekoweb on ${Date.now()} -->`;
                 }
 
                 if (fs.existsSync(path.join(outDir, '404.html'))) {
@@ -300,7 +281,7 @@ export default function createIntegration(args: Options): AstroIntegration {
                     await neko.delete(folder);
                 } catch (e) { }
 
-                await bigId.finalizeUpload(neko, logger, rssFile, rssContent);
+                await bigId.finalizeUpload(neko, logger, siteName ?? '', rssFeed ? join(`/${folder}`, rssFeed): undefined, rssContent);
                 logger.info(`Successfully deployed "${outDir}"`);
                 await fsp.unlink(zipFileName);
                 fs.rmSync(tmpBuildDir, { recursive: true, force: true });
