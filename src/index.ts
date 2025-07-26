@@ -5,7 +5,7 @@ import path, { join } from 'node:path';
 import FormData from 'form-data'; 
 import { fileURLToPath } from 'node:url';
 
-const version = '3.4.0';
+const version = '3.7.1';
 
 import type {
 	AstroConfig,
@@ -162,7 +162,7 @@ class NekoAPI extends NekowebAPI {
 }
 
 class BigFileExt extends BigFile {
-    async finalizeUpload(api: NekoAPI, logger: AstroIntegrationLogger, siteName: string, rssFeed?: string, rssContent?: string) {
+    async finalizeUpload(api: NekoAPI, logger: AstroIntegrationLogger, domain: string, siteName: string, rssFeed?: string, rssContent?: string) {
         try {
             let res = await this.import();
 
@@ -178,7 +178,7 @@ class BigFileExt extends BigFile {
             }
 
             await api.editFileCSRF(
-                '/.astro-adapter-nekoweb.html',
+                `/${domain}/.astro-adapter-nekoweb.html`,
                 `<!--
     This is an auto-generated file created by astro-adapter-nekoweb.
 
@@ -281,7 +281,7 @@ export default function createIntegration(args: Options): AstroIntegration {
                 await bigId.append(zip);
                 logger.info(`Uploaded "${outDir}"`);
 
-                await bigId.finalizeUpload(neko, logger, siteName ?? '', rssFeed ? join(`/${folder}`, rssFeed): undefined, rssContent);
+                await bigId.finalizeUpload(neko, logger, domain ?? '', siteName ?? '', rssFeed ? join(`/${folder}`, rssFeed): undefined, rssContent);
                 logger.info(`Successfully deployed "${outDir}"`);
                 await fsp.unlink(zipFileName);
                 fs.rmSync(tmpBuildDir, { recursive: true, force: true });
